@@ -48,28 +48,23 @@
             },
             {
                 "name": "policies-configuration",
-                "description": "name of the policies project to use",
-                "default": ""
+                "description": "name of the policies project to use"
             },
             {
                 "name": "setdbparms-configuration",
-                "description": "name of the setdbparms configuration object to use",
-                "default": ""
+                "description": "name of the setdbparms configuration object to use"
             },
             {
                 "name": "datasource-configuration",
-                "description": "name of the data source object to use",
-                "default": ""
+                "description": "name of the data source object to use"
             },
             {
                 "name": "serverconf-configuration",
-                "description": "name of the server.conf.yaml configuration object to use",
-                "default": ""
+                "description": "name of the server.conf.yaml configuration object to use"
             },
             {
                 "name": "truststore-configuration",
-                "description": "name of the truststore configuration object to use",
-                "default": ""
+                "description": "name of the truststore configuration object to use"
             }
         ],
         "workspaces": [
