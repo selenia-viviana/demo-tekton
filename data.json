@@ -40,7 +40,7 @@
             },
             {
                 "name": "replicas",
-                "default": '1'
+                "default": 1
             },
             {
                 "name": "policies-configuration",
