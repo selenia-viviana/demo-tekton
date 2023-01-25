@@ -37,11 +37,11 @@ spec:
     #   scaling and resource limits
     # --------------------------------------------------------------
     - name: cpu-limit
-      default: 2
+      default: '2'
     - name: memory-limit
       default: "1Gi"
     - name: replicas
-      default: 1
+      default: '1'
     # --------------------------------------------------------------
     # optional arguments
     #   Configuration resources that can be added to
