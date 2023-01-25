@@ -36,11 +36,11 @@
             },
             {
                 "name": "cpu-limit",
-                "default": 2
+                "default": '2'
             },
             {
                 "name": "replicas",
-                "default": 1
+                "default": '1'
             },
             {
                 "name": "policies-configuration",
