@@ -39,10 +39,6 @@
                 "default": 2
             },
             {
-                "name": "memory-limit",
-                "default": "1Gi"
-            },
-            {
                 "name": "replicas",
                 "default": 1
             },
