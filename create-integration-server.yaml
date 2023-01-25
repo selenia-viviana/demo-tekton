@@ -49,19 +49,14 @@ spec:
     # --------------------------------------------------------------
     - name: policies-configuration
       description: name of the policies project to use
-      default: ''
     - name: setdbparms-configuration
       description: name of the setdbparms configuration object to use
-      default: ''
     - name: datasource-configuration
       description: name of the data source object to use
-      default: ''
     - name: serverconf-configuration
       description: name of the server.conf.yaml configuration object to use
-      default: ''
     - name: truststore-configuration
       description: name of the truststore configuration object to use
-      default: ''
     # --------------------------------------------------------------
 
   workspaces:
