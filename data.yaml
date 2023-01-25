@@ -1,0 +1,89 @@
+{
+    "apiVersion": "tekton.dev/v1beta1",
+    "kind": "Task",
+    "metadata": {
+        "name": "ace-create-integration-server"
+    },
+    "spec": {
+        "params": [
+            {
+                "name": "integration-name",
+                "description": "name to give the integration server name"
+            },
+            {
+                "name": "ace-namespace",
+                "description": "namespace to create the IntegrationServer in"
+            },
+            {
+                "name": "ace-server-version",
+                "description": "version of App Connect Enterprise to use"
+            },
+            {
+                "name": "ace-server-license",
+                "description": "ID of the license to use for the IntegrationServer"
+            },
+            {
+                "name": "ace-server-base-image",
+                "description": "Docker image to use as a base for the server.\nExample values for this can be found at\nhttps://www.ibm.com/docs/en/app-connect/containers_cd?topic=obtaining-app-connect-enterprise-server-image-from-cloud-container-registry\n"
+            },
+            {
+                "name": "bar-file-location",
+                "description": "folder containing an integration.bar file to deploy"
+            },
+            {
+                "name": "integration-tag",
+                "description": "docker tag to use for the integration image"
+            },
+            {
+                "name": "cpu-limit",
+                "default": 2
+            },
+            {
+                "name": "memory-limit",
+                "default": "1Gi"
+            },
+            {
+                "name": "replicas",
+                "default": 1
+            },
+            {
+                "name": "policies-configuration",
+                "description": "name of the policies project to use",
+                "default": ""
+            },
+            {
+                "name": "setdbparms-configuration",
+                "description": "name of the setdbparms configuration object to use",
+                "default": ""
+            },
+            {
+                "name": "datasource-configuration",
+                "description": "name of the data source object to use",
+                "default": ""
+            },
+            {
+                "name": "serverconf-configuration",
+                "description": "name of the server.conf.yaml configuration object to use",
+                "default": ""
+            },
+            {
+                "name": "truststore-configuration",
+                "description": "name of the truststore configuration object to use",
+                "default": ""
+            }
+        ],
+        "workspaces": [
+            {
+                "name": "output",
+                "description": "workspace with the resources"
+            }
+        ],
+        "steps": [
+            {
+                "name": "run",
+                "image": "image-registry.openshift-image-registry.svc:5000/openshift/tools",
+                "script": "#!/bin/sh\nset -e\necho \"creating base ACE imagestream\"\noc apply -f - <<EOF\napiVersion: image.openshift.io/v1\nkind: ImageStream\nmetadata:\n  name: ace-server-prod\n  namespace: $(params.ace-namespace)\nEOF\necho \"tagging with requested base image\"\noc tag \\\n  -n $(params.ace-namespace) \\\n  $(params.ace-server-base-image) \\\n  ace-server-prod:latest-amd64\necho \"defining custom ACE imagestream\"\noc apply -f - <<EOF\napiVersion: image.openshift.io/v1\nkind: ImageStream\nmetadata:\n  name: $(params.integration-name)\n  namespace: $(params.ace-namespace)\nEOF\necho \"creating ACE image build configuration\"\noc apply -f - <<EOF\napiVersion: build.openshift.io/v1\nkind: BuildConfig\nmetadata:\n  name: $(params.integration-name)\n  namespace: $(params.ace-namespace)\n  labels:\n    name: $(params.integration-name)\nspec:\n  triggers: []\n  source:\n    type: dockerfile\n    dockerfile: |\n      FROM ace-server-prod:latest-amd64\n      COPY integration.bar /home/aceuser/initial-config/bars/integration.bar\n  strategy:\n    type: Docker\n    dockerStrategy:\n      pullSecret:\n        name: ibm-entitlement-key\n      from:\n        kind: ImageStreamTag\n        name: \"ace-server-prod:latest-amd64\"\n        namespace: $(params.ace-namespace)\n  output:\n    to:\n      kind: ImageStreamTag\n      name: \"$(params.integration-name):$(params.integration-tag)\"\n      namespace: $(params.ace-namespace)\nEOF\necho \"starting custom image build\"\ncd $(params.bar-file-location)\nls -l\noc start-build $(params.integration-name) -n $(params.ace-namespace) --from-file ./integration.bar --wait=true\necho \"preparing configuration list\"\nif [ -n \"$(params.policies-configuration)\" ]; then\n  POLICIES_CONFIG=\"- $(params.policies-configuration)\"\nfi\nif [ -n \"$(params.setdbparms-configuration)\" ]; then\n  SETDBPARMS_CONFIG=\"- $(params.setdbparms-configuration)\"\nfi\nif [ -n \"$(params.datasource-configuration)\" ]; then\n  DATASOURCE_CONFIG=\"- $(params.datasource-configuration)\"\nfi\nif [ -n \"$(params.serverconf-configuration)\" ]; then\n  SERVERCONF_CONFIG=\"- $(params.serverconf-configuration)\"\nfi\nif [ -n \"$(params.truststore-configuration)\" ]; then\n  TRUSTSTORE_CONFIG=\"- $(params.truststore-configuration)\"\nfi\necho \"creating integration server\"\noc apply -f - <<EOF\napiVersion: appconnect.ibm.com/v1beta1\nkind: IntegrationServer\nmetadata:\n  name: $(params.integration-name)\n  namespace: $(params.ace-namespace)\nspec:\n  pod:\n    containers:\n      runtime:\n        image: image-registry.openshift-image-registry.svc:5000/$(params.ace-namespace)/$(params.integration-name):$(params.integration-tag)\n        resources:\n          limits:\n            cpu: $(params.cpu-limit)\n            memory: $(params.memory-limit)\n          requests:\n            cpu: $(params.cpu-limit)\n            memory: $(params.memory-limit)\n  configurations:\n    $POLICIES_CONFIG\n    $SETDBPARMS_CONFIG\n    $DATASOURCE_CONFIG\n    $SERVERCONF_CONFIG\n    $TRUSTSTORE_CONFIG\n  adminServerSecure: true\n  createDashboardUsers: true\n  designerFlowsOperationMode: disabled\n  service:\n    endpointType: http\n  version: '$(params.ace-server-version)'\n  enableMetrics: false\n  license:\n    accept: true\n    license: $(params.ace-server-license)\n    use: CloudPakForIntegrationProduction\n  replicas: $(params.replicas)\n  router:\n    timeout: 120s\nEOF\n"
+            }
+        ]
+    }
+}
